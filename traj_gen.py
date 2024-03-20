@@ -52,9 +52,9 @@ def write_trajectory_to_csv(traj_list,gripper_state):
 
 def gripper_open_close_trajectory(config_matrix, k):
 
-    Tf = 1 # 1 second for gripper to close
+    tf = 1 # 1 second for gripper to close
 
-    N = int(Tf*k/0.01)
+    N = int(tf*k/0.01)
 
     traj_list = [config_matrix]*N
 
@@ -66,18 +66,18 @@ def trajectory_speed(frame_start,frame_end, max_velocity, k):
 
     dist = nla.norm(p1-p2)
 
-    Tf = dist/max_velocity
-    N = Tf*k/0.01
+    tf = dist/max_velocity
+    N = tf*k/0.01
 
-    return Tf, N
+    return tf, N
 
 def TrajectoryGenerator(T_start, T_end, k, gripper_state):
     """
     meat and otatoes of our code
     """
     max_velocity = 0.10 # m/s
-    Tf, N = trajectory_speed(T_start, T_end, max_velocity, k)
-    traj_list = mr.ScrewTrajectory(T_start, T_end, Tf, N, 3)
+    tf, N = trajectory_speed(T_start, T_end, max_velocity, k)
+    traj_list = mr.ScrewTrajectory(T_start, T_end, tf, N, 3)
     write_trajectory_to_csv(traj_list,gripper_state)
 
     
