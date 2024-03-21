@@ -3,7 +3,7 @@ import numpy.linalg as nla
 import modern_robotics as mr
 
 
-def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, k: int):
+def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: float, ki: float):
     """
     feedforward+feedback control law as discussed in class.
     
@@ -11,8 +11,8 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, k: i
     Tse_d : current "reference" ee config
     Tse_d_next: ee config at next timestep
 
-    k_i: scalar of integral gain
-    k_p: scalar of proportional gain
+    ki: scalar of integral gain
+    kp: scalar of proportional gain
 
     """
     dt = 0.01
@@ -36,4 +36,12 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, k: i
     V_new =  np.dot(Adj, Vd) + Kp@Xe + Ki
 
 
-def calc_jacobian()
+    # screw axes
+    B1 = np.array([0, 0, 1, 0, 0.033, 0])
+    B2 = np.array([0, -1, 0, -0.5076, 0, 0])
+    B3 = np.array([0,-1,0,-0.3526, 0, 0]) 
+    B4 = np.array([0, -1, 0, -0.2176, 0, 0])
+    B5 = np.array([0, 0, 1, 0, 0, 0])
+
+    Jb_0 = np.array([B1, B2, B3, B4, B5])
+    
