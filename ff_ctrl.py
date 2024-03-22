@@ -30,10 +30,10 @@ def joint_limits(positions):
 
     joint_free = np.ones(arm_thetas.shape, dtype=bool)
 
-    if arm_thetas[2] > -0.01:
+    if arm_thetas[2] < -0.01:
         joint_free[2] = False
     
-    if arm_thetas[3] > -0.01:
+    if arm_thetas[3] < -0.01:
         joint_free[3] = False
 
     return joint_free        

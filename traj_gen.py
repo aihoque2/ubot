@@ -46,8 +46,8 @@ def add_df_row(config_matrix_T,gripper_state):
 
         csvwriter.writerow(data_row)
 
-def write_trajectory_to_csv(traj_list,gripper_state):
-    for matrix in traj_list:
+def write_trajectory_to_csv(traj_vec,gripper_state):
+    for matrix in traj_vec:
         add_df_row(matrix,gripper_state)
 
 def gripper_open_close_trajectory(config_matrix, k):
@@ -56,29 +56,30 @@ def gripper_open_close_trajectory(config_matrix, k):
 
     N = int(tf*k/0.01)
 
-    traj_list = [config_matrix]*N
+    traj_vec = [config_matrix]*N
 
-    return traj_list
+    return traj_vec
 
 def trajectory_speed(frame_start,frame_end, max_velocity, k):
     p1 = frame_start[:-1,-1:].flatten()
     p2 = frame_end[:-1,-1:].flatten()
 
     dist = nla.norm(p1-p2)
-
+    dt = 0.01
     tf = dist/max_velocity
-    N = tf*k/0.01
+    N = tf*k/dt # dt=0.01
 
     return tf, N
 
 def TrajectoryGenerator(T_start, T_end, k, gripper_state):
     """
-    meat and otatoes of our code
+    meat and potatoes of our code
     """
     max_velocity = 0.10 # m/s
     tf, N = trajectory_speed(T_start, T_end, max_velocity, k)
-    traj_list = mr.ScrewTrajectory(T_start, T_end, tf, N, 3)
-    write_trajectory_to_csv(traj_list,gripper_state)
+    traj_vec = mr.ScrewTrajectory(T_start, T_end, tf, N, 3)
+    write_trajectory_to_csv(traj_vec,gripper_state)
+    return traj_vec
 
     
 """
@@ -138,9 +139,9 @@ gripper_state = 0
 TrajectoryGenerator(T_start, T_end, k, gripper_state)
 
 # Close gripper
-traj_list = gripper_open_close_trajectory(T_end, k)
+traj_vec = gripper_open_close_trajectory(T_end, k)
 gripper_state = 1
-write_trajectory_to_csv(traj_list,gripper_state)
+write_trajectory_to_csv(traj_vec,gripper_state)
 
 # Move from current configuration to final standoff configuration
 T_start = T_end
@@ -155,6 +156,6 @@ gripper_state = 1
 TrajectoryGenerator(T_start, T_end, k, gripper_state)
 
 # Open gripper
-traj_list = gripper_open_close_trajectory(T_end, k)
+traj_vec = gripper_open_close_trajectory(T_end, k)
 gripper_state = 0
-write_trajectory_to_csv(traj_list,gripper_state)
+write_trajectory_to_csv(traj_vec,gripper_state)
