@@ -1,7 +1,8 @@
 import numpy as np
 import numpy.linalg as nla
 import modern_robotics as mr
-
+np.set_printoptions(precision=3)
+np.set_printoptions(suppress=True)
 
 # T matrix from chassis frame to b to arm frame O
 Tb0 = np.array([[1,0,0,0.1662],
@@ -29,10 +30,10 @@ def joint_limits(positions):
 
     joint_free = np.ones(arm_thetas.shape, dtype=bool)
 
-    if arm_thetas[2] > -0.1:
+    if arm_thetas[2] > -0.01:
         joint_free[2] = False
     
-    if arm_thetas[3] > -0.1:
+    if arm_thetas[3] > -0.01:
         joint_free[3] = False
 
     return joint_free        
@@ -58,12 +59,14 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
 
     Xe = Tse
     Xd = Tse_d
+    Xd[np.abs(Xd) < 1e-7] = 0.0
     Xd_next = Tse_dnext
+    Xd_next[np.abs(Xd_next) < 1e-7] = 0.0
 
 
-    Kp = kp * np.eye(4)
-    Ki = ki* np.eye(4)
- 
+    Kp = kp * np.eye(6)
+    Ki = ki* np.eye(6)
+
     Xd_inv = mr.TransInv(Xd)
     Xe_inv = mr.TransInv(Xe)
 
@@ -78,8 +81,10 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
 
     Adj = mr.Adjoint(Xe_inv @ Xd)
     print("adjoint shape: ", Vd.shape)
-    errors += (mr.Adjoint(Ki)@Xerr)*dt
-    V_new =  Adj@Vd + mr.se3ToVec(Kp@Xe) + errors
+    errors += Xerr*dt
+
+    # Control Law
+    V_new =  Adj@Vd + Kp@Xerr + Ki@errors
     print("result of adj@Vd: ", Adj@Vd)
 
     """
@@ -93,12 +98,12 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
 
     F6 = np.zeros([6,4])
     F = np.linalg.pinv(H_0)
-    F6[2:5,:] = F
+    F6[2:-1,:] = F
 
     theta_arm = positions[1]
      # EE config in {0} coords
     T0e = mr.FKinBody(M, B.T, theta_arm)
-
+    T0e[np.abs(T0e) < 1e-7] = 0
     Teb = mr.TransInv(T0e) @ mr.TransInv(Tb0)
 
     J_base = mr.Adjoint(Teb) @ F6
@@ -106,12 +111,12 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
 
     # end effector jacobian
     Je = np.concatenate((J_base, J_arm), axis=1)
-    Je[np.abs(Je) < 1e-6] = 0
+    Je[np.abs(Je) < 1e-7] = 0
 
     #Je[:, np.where(test_joints == False)] = 0
 
     u_thetas = nla.pinv(Je)@V_new
-    u_thetas[np.abs(u_thetas) < 1e-9] = 0.0
+    u_thetas[np.abs(u_thetas) < 1e-7] = 0.0
     return u_thetas, Xerr, errors, Je, V_new, Vd    
 
 
@@ -126,6 +131,7 @@ def get_Tse(positions, T0e, Tb0):
                     [np.sin(phi),np.cos(phi),0,y],
                     [0,0,1,z],
                     [0,0,0,1]])
+    
 
     Teb = mr.TransInv(T0e) @ mr.TransInv(Tb0)
 
@@ -168,7 +174,7 @@ Xd_next = np.array([[0,0,1,0.6],
     
 #kp = 0.045
 #ki = 0.35
-kp = 0.0
+kp = 1.0
 ki = 0.0
 
 Ki_error = 0
