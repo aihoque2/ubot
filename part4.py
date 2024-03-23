@@ -1,11 +1,17 @@
 import numpy as np
 import numpy.linalg as nla
 
+import matplotlib.pyplot as plt
+
+from utils import trajectory_sequence
+
 """
 we shall combine trajectory generation , kin simulation, and feedforward
 """
+# {b}: car body frame
+# {c}: cube frame
 
-def full_function():
+def full_function(Tsc_init, Tsc_final, Tsb_initial):
     # Tse Modern Robotics Wiki Page. initial EE config
     Tse_init = np.array([[0,0,1,0],
                       [0,1,0,0],
@@ -24,7 +30,7 @@ def full_function():
                       [0,0,0,1]])
 
 
-
+    # control theory stuff
     errors = np.array([0,0,0,0,0,0])
 
     # Set Tse from Joint Angles
@@ -38,4 +44,5 @@ def full_function():
     k = 1 # number of trajectory reference configurations per 0.01 seconds
 
 
-    traj_list_complete, gripper_state_complete = tg.gen_full_trajectory(Tsc_init, Tsc_final, Tse_init, k, max_velocity, write_test_traj = False)
+    traj_list_complete, gripper_state_complete = trajectory_sequence(Tse_init, Tsc_init, Tsc_final, max_velocity,  k)
+

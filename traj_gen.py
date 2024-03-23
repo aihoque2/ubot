@@ -32,23 +32,23 @@ def create_data_row(T,gripper_state):
 
     return data_row
 
-def add_df_row(config_matrix_T,gripper_state):
+def add_df_row(config_matrix_T,gripper_state, csv_name):
 
     # unpack the data
     data_row = create_data_row(config_matrix_T,gripper_state)
 
     # create the file and write the row
     filepath = os.path.dirname(os.path.abspath(__file__))
-    filename = filepath + '//' + 'results.csv'
+    filename = filepath + '//' + csv_name
 
     with open(filename, 'a', newline='') as f:
         csvwriter = csv.writer(f,)
 
         csvwriter.writerow(data_row)
 
-def write_trajectory_to_csv(traj_vec,gripper_state):
-    for matrix in traj_vec:
-        add_df_row(matrix,gripper_state)
+def write_trajectory_to_csv(trajs,gripper_state, csv_name):
+    for matrix in trajs:
+        add_df_row(matrix,gripper_state, csv_name)
 
 def gripper_open_close_trajectory(config_matrix, k):
 
@@ -71,15 +71,14 @@ def trajectory_speed(frame_start,frame_end, max_velocity, k):
 
     return tf, N
 
-def TrajectoryGenerator(T_start, T_end, k, gripper_state):
+def TrajectoryGenerator(T_start, T_end, k, gripper_state, max_velocity, csv_name):
     """
     meat and potatoes of our code
     """
-    max_velocity = 0.10 # m/s
     tf, N = trajectory_speed(T_start, T_end, max_velocity, k)
-    traj_vec = mr.ScrewTrajectory(T_start, T_end, tf, N, 3)
-    write_trajectory_to_csv(traj_vec,gripper_state)
-    return traj_vec
+    trajs = mr.ScrewTrajectory(T_start, T_end, tf, N, 3)
+    write_trajectory_to_csv(trajs,gripper_state, csv_name)
+    return trajs
 
     
 """
@@ -93,6 +92,8 @@ Move to final grasp configuration
 Open gripper
 
 """
+
+csv_name = 'milestone1.csv'
 # Define initial, final, standoff, and grasping configurations
 Tsc_init = np.array([[1,0,0,1],
                  [0,1,0,0],
@@ -119,6 +120,7 @@ Tce_grasp = mr.RpToTrans(Rce,pce_grasp)
 
 # Define Time for each trajectory segment
 k = 1 # number of trajectory reference configurations per 0.01 seconds
+max_vel = .10
 
 # Change all configurations to Space Frame
 Tse_init_standoff = Tsc_init@Tce_standoff
@@ -130,32 +132,32 @@ Tse_final_grasp = Tsc_final@Tce_grasp
 T_start = Tse_init
 T_end = Tse_init_standoff
 gripper_state = 0
-TrajectoryGenerator(T_start, T_end, k, gripper_state)
+TrajectoryGenerator(T_start, T_end, k, gripper_state, max_vel, csv_name)
 
 # Move to grasp configuration
 T_start = T_end
 T_end = Tse_init_grasp
 gripper_state = 0
-TrajectoryGenerator(T_start, T_end, k, gripper_state)
+TrajectoryGenerator(T_start, T_end, k, gripper_state, max_vel, csv_name)
 
 # Close gripper
 traj_vec = gripper_open_close_trajectory(T_end, k)
 gripper_state = 1
-write_trajectory_to_csv(traj_vec,gripper_state)
+write_trajectory_to_csv(traj_vec, gripper_state, csv_name)
 
 # Move from current configuration to final standoff configuration
 T_start = T_end
 T_end = Tse_final_standoff
 gripper_state = 1
-TrajectoryGenerator(T_start, T_end, k, gripper_state)
+TrajectoryGenerator(T_start, T_end, k, gripper_state, max_vel, csv_name)
 
 # Move from current configuration to final standoff configuration
 T_start = T_end
 T_end = Tse_final_grasp
 gripper_state = 1
-TrajectoryGenerator(T_start, T_end, k, gripper_state)
+TrajectoryGenerator(T_start, T_end, k, gripper_state, max_vel, csv_name)
 
 # Open gripper
 traj_vec = gripper_open_close_trajectory(T_end, k)
 gripper_state = 0
-write_trajectory_to_csv(traj_vec,gripper_state)
+write_trajectory_to_csv(traj_vec, gripper_state, csv_name)

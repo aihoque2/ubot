@@ -1,6 +1,9 @@
 import numpy as np
 import numpy.linalg as nla
 import modern_robotics as mr
+
+from utils import trajectory_sequence
+
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)
 
@@ -183,18 +186,19 @@ dt = 0.01
 
 u_theta, Xerr, Ki_error, J_e, V_t, Vd = FeedbackControl(Tse, Xd, Xd_next, kp, ki, position_state, test_joints, Ki_error)
 
+print("ff_ctrl.py Unit Test")
 print("++++++++++++++++++++++++++++++")
-print("Vd")
+print("Vd: ")
 print(Vd)
 print("++++++++++++++++++++++++++++++")
-print("Xerr")
+print("Xerr: ")
 print(Xerr)
 print("++++++++++++++++++++++++++++++")
-print("Je")
+print("Je: ")
 print(J_e)
 print("++++++++++++++++++++++++++++++")
-print("V_t")
+print("V_t: ")
 print(V_t)
 print("++++++++++++++++++++++++++++++")
-print("U_theta")
+print("U_theta: ")
 print(u_theta)
