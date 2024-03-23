@@ -28,8 +28,7 @@ B5 = np.array([0, 0, 1, 0, 0, 0])
 
 B = np.array([B1, B2, B3, B4, B5])
 
-def joint_limits(positions):
-    arm_thetas = positions[1]
+def joint_limits(arm_thetas):
 
     joint_free = np.ones(arm_thetas.shape, dtype=bool)
 
@@ -41,9 +40,7 @@ def joint_limits(positions):
 
     return joint_free        
 
-    
-
-def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: float, ki: float, positions, test_joints, errors):
+def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, Kp, Ki, positions, test_joints, errors):
     """
     feedforward+feedback control law as discussed in class.
     
@@ -51,8 +48,9 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
     Tse_d : current "reference" ee config
     Tse_d_next: ee config at next timestep
 
-    ki: scalar of integral gain
-    kp: scalar of proportional gain
+    Ki: 6x6 diagnal of integral mgain
+    Kp: 6x6 diagnal of proportional gain
+
 
     """
     r = 0.0475
@@ -66,9 +64,6 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
     Xd_next = Tse_dnext
     Xd_next[np.abs(Xd_next) < 1e-7] = 0.0
 
-
-    Kp = kp * np.eye(6)
-    Ki = ki* np.eye(6)
 
     Xd_inv = mr.TransInv(Xd)
     Xe_inv = mr.TransInv(Xe)
@@ -94,14 +89,10 @@ def FeedbackControl(Tse:np.ndarray, Tse_d:np.ndarray, Tse_dnext:np.ndarray, kp: 
     CALC'ing JACOBIAN
     """
 
-    H_0 = (1/r)*np.array([[-l-w,1,-1],
-                  [l+w,1,1],
-                  [l+w,1,-1],
-                  [-l-w,1,1]])
 
+    F = r/4 * np.array([[-1/(l+w),1/(l+w),1/(l+w),-1/(l+w)],[1,1,1,1],[-1,1,-1,1]])
     F6 = np.zeros([6,4])
-    F = np.linalg.pinv(H_0)
-    F6[2:-1,:] = F
+    F6[2:5,:] = F
 
     theta_arm = positions[1]
      # EE config in {0} coords
@@ -146,59 +137,63 @@ def get_Tse(positions, T0e, Tb0):
 """"
 testing
 """
-chassis_config = np.array([0.0,0.0,0.0])
-arm_thetas = np.array([0.0,0.0,0.2,-1.6,0.0])
-wheel_thetas = np.array([0.0,0.0,0.0,0.0])
-position_state = [chassis_config,arm_thetas,wheel_thetas]
+if __name__ == "__main__":
+    chassis_config = np.array([0.0,0.0,0.0])
+    arm_thetas = np.array([0.0,0.0,0.2,-1.6,0.0])
+    wheel_thetas = np.array([0.0,0.0,0.0,0.0])
+    position_state = [chassis_config,arm_thetas,wheel_thetas]
 
-test_joints = joint_limits(position_state)
-
-
-
-# Fixed Offset between the end effector and the base of the arm frameb calculated from trajectory generation
-
-# EE config in {0} coords
-T0e = mr.FKinBody(M, B.T, arm_thetas.T)
-
-# Testing the functions
-Tse = get_Tse(position_state[0], T0e, Tb0)
+    test_joints = joint_limits(position_state)
 
 
-# Feedback control law
-Xd = np.array([[0,0,1,0.5],
-                [0,1,0,0],
-                [-1,0,0,0.5],
-                [0,0,0,1]])
 
-Xd_next = np.array([[0,0,1,0.6],
+    # Fixed Offset between the end effector and the base of the arm frameb calculated from trajectory generation
+
+    # EE config in {0} coords
+    T0e = mr.FKinBody(M, B.T, arm_thetas.T)
+
+    # Testing the functions
+    Tse = get_Tse(position_state[0], T0e, Tb0)
+
+
+    # Feedback control law
+    Xd = np.array([[0,0,1,0.5],
                     [0,1,0,0],
-                    [-1,0,0,0.3],
+                    [-1,0,0,0.5],
                     [0,0,0,1]])
-    
-#kp = 0.045
-#ki = 0.35
-kp = 1.0
-ki = 0.0
 
-Ki_error = 0
+    Xd_next = np.array([[0,0,1,0.6],
+                        [0,1,0,0],
+                        [-1,0,0,0.3],
+                        [0,0,0,1]])
+        
+    #kp = 0.045
+    #ki = 0.35
+    kp = 0.0
+    ki = 0.0
 
-dt = 0.01
+    Kp = kp * np.eye(6)
+    Ki = ki* np.eye(6)
 
-u_theta, Xerr, Ki_error, J_e, V_t, Vd = FeedbackControl(Tse, Xd, Xd_next, kp, ki, position_state, test_joints, Ki_error)
+    Ki_error = 0
 
-print("ff_ctrl.py Unit Test")
-print("++++++++++++++++++++++++++++++")
-print("Vd: ")
-print(Vd)
-print("++++++++++++++++++++++++++++++")
-print("Xerr: ")
-print(Xerr)
-print("++++++++++++++++++++++++++++++")
-print("Je: ")
-print(J_e)
-print("++++++++++++++++++++++++++++++")
-print("V_t: ")
-print(V_t)
-print("++++++++++++++++++++++++++++++")
-print("U_theta: ")
-print(u_theta)
+    dt = 0.01
+
+    u_theta, Xerr, Ki_error, J_e, V_t, Vd = FeedbackControl(Tse, Xd, Xd_next, Kp, Ki, position_state, test_joints, Ki_error)
+
+    print("ff_ctrl.py Unit Test")
+    print("++++++++++++++++++++++++++++++")
+    print("Vd: ")
+    print(Vd)
+    print("++++++++++++++++++++++++++++++")
+    print("Xerr: ")
+    print(Xerr)
+    print("++++++++++++++++++++++++++++++")
+    print("Je: ")
+    print(J_e)
+    print("++++++++++++++++++++++++++++++")
+    print("V_t: ")
+    print(V_t)
+    print("++++++++++++++++++++++++++++++")
+    print("U_theta: ")
+    print(u_theta)

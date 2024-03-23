@@ -58,6 +58,7 @@ def trajectory_sequence(Tse_init, Tsc_init, Tsc_final, max_vel, k, csv_name):
     gripper_states.append(gripper_state)
     traj_seq.append(traj)
 
+
     # Move to grasp configuration
     T_start = T_end
     T_end = Tse_init_grasp
@@ -101,25 +102,25 @@ def trajectory_sequence(Tse_init, Tsc_init, Tsc_final, max_vel, k, csv_name):
 
 
 #unitTest
-    
-csv_name = 'utilstest.csv'
-# Define initial, final, standoff, and grasping configurations
-Tsc_init = np.array([[1,0,0,1],
-                 [0,1,0,0],
-                 [0,0,1,0],
-                 [0,0,0,1]])
+if __name__ == "__main__":
+    csv_name = 'utilstest.csv'
+    # Define initial, final, standoff, and grasping configurations
+    Tsc_init = np.array([[1,0,0,1],
+                    [0,1,0,0],
+                    [0,0,1,0],
+                    [0,0,0,1]])
 
-Tsc_final = np.array([[0,1,0,0],
-                 [-1,0,0,-1],
-                 [0,0,1,0],
-                 [0,0,0,1]])
+    Tsc_final = np.array([[0,1,0,0],
+                    [-1,0,0,-1],
+                    [0,0,1,0],
+                    [0,0,0,1]])
 
-Tse_init = np.array([[1,0,0,0],
-                 [0,1,0,0],
-                 [0,0,1,1],
-                 [0,0,0,1]])
+    Tse_init = np.array([[1,0,0,0],
+                    [0,1,0,0],
+                    [0,0,1,1],
+                    [0,0,0,1]])
 
-k = 1 # number of trajectory reference configurations per 0.01 seconds
-max_vel = .10
+    k = 1 # number of trajectory reference configurations per 0.01 seconds
+    max_vel = .10
 
-traj_list_complete, gripper_state_complete = trajectory_sequence(Tse_init, Tsc_init, Tsc_final, max_vel, k, csv_name)
+    traj_list_complete, gripper_state_complete = trajectory_sequence(Tse_init, Tsc_init, Tsc_final, max_vel, k, csv_name)
